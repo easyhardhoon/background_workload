@@ -4,7 +4,6 @@
 
 extern void run_gpu_texture_workload(int tex_size, int num_textures, int delay_ms);
 
-// 간단한 EGL 초기화 함수
 bool initEGL() {
     EGLDisplay display;
     EGLContext context;
@@ -44,7 +43,6 @@ bool initEGL() {
         return false;
     }
 
-    // Dummy surface
     EGLint pbuffer_attribs[] = {
         EGL_WIDTH, 16,
         EGL_HEIGHT, 16,
@@ -68,7 +66,6 @@ bool initEGL() {
 int main() {
     if (!initEGL()) return 1;
 
-    // 텍스처 하나당 256MB (4096x4096 RGBA float), 8개면 약 2GB
     //run_gpu_texture_workload(4096, 8, 100);  // texture size, count, delay(ms)
     run_gpu_texture_workload(4096, 6, 100);  // texture size, count, delay(ms)
     //run_gpu_texture_workload(4096, 2, 100);  // texture size, count, delay(ms)

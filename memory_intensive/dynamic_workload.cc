@@ -17,7 +17,6 @@ void run_gpu_texture_workload(int tex_size, int num_textures, int delay_ms) {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-        // 실제 GPU VRAM 사용 유도
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tex_size, tex_size, 0, GL_RGBA, GL_FLOAT, nullptr);
 
         GLenum err = glGetError();
@@ -33,7 +32,7 @@ void run_gpu_texture_workload(int tex_size, int num_textures, int delay_ms) {
     }
 
     std::cout << "Workload complete. Holding textures for 30 sec..." << std::endl;
-    std::this_thread::sleep_for(std::chrono::seconds(30));  // 점유 유지
+    std::this_thread::sleep_for(std::chrono::seconds(30)); 
 
     for (auto tex : textures) {
         glDeleteTextures(1, &tex);
