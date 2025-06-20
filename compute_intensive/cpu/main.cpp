@@ -9,16 +9,14 @@
 
 void cpu_workload_function(std::atomic<bool>& running_flag, int thread_id, int work_level) {
     volatile double result = 0.0;
-    int inner_loop_count = 10000 * work_level;
+    int inner_loop_count = 2 * work_level;
 
     while (running_flag) {
         for (int i = 1; i < inner_loop_count; ++i) {
-            result += std::sin(i) * std::cos(i);
-            result += std::sqrt(i) / (std::pow(i, 0.3) + 1.0);
+            result += i * 0.001;
+            result += i / (i + 1.0);
         }
     }
-
-    std::cout << "Thread " << thread_id << " finished.\n";
 }
 
 int main(int argc, char** argv) {
@@ -37,11 +35,14 @@ int main(int argc, char** argv) {
     num_threads = std::max(1, std::min(num_threads, max_cores));
     workload_level = std::max(1, std::min(workload_level, 10));
 
-    std::cout << "Launching CPU workload with:\n"
-              << " - Threads: " << num_threads << " (Max cores: " << max_cores << ")\n"
-              << " - Duration: " << duration_sec << " sec\n"
-              << " - Workload Level: " << workload_level << " (1=Low ~ 10=Max)\n";
+    //std::cout << "Launching CPU workload with:\n"
+    //          << " - Threads: " << num_threads << " (Max cores: " << max_cores << ")\n"
+    //          << " - Duration: " << duration_sec << " sec\n"
+    //          << " - Workload Level: " << workload_level << " (1=Low ~ 10=Max)\n";
 
+    //std::cout << "=== Initial sleep (5s) ===\n";
+    std::this_thread::sleep_for(std::chrono::seconds(5));
+    
     std::atomic<bool> running_flag(true);
     std::vector<std::thread> threads;
 
@@ -56,7 +57,7 @@ int main(int argc, char** argv) {
         if (t.joinable()) t.join();
     }
 
-    std::cout << "CPU workload complete.\n";
+    //std::cout << "CPU workload complete.\n";
     return 0;
 }
 

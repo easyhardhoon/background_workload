@@ -57,7 +57,7 @@ bool initEGL(EGLContextState& egl) {
         return false;
     }
 
-    std::cout << "[EGL] Successfully initialized EGL context." << std::endl;
+    //std::cout << "[EGL] Successfully initialized EGL context." << std::endl;
     return true;
 }
 

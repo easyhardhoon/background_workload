@@ -10,22 +10,22 @@ int main(int argc, char** argv) {
     int level = 10;
 
     if (argc!=3){
-    	std::cout << "<usage> : ./gl_workload <duration> <level\n";
+//     	std::cout << "<usage> : ./gl_workload <duration> <level\n";
 	return 1;
     }
     if (argc >= 2) duration_sec = std::atoi(argv[1]);
     if (argc >= 3) level = std::atoi(argv[2]);
 
-    std::cout << "=== Initial sleep (3s) ===\n";
-    sleep(3);
+// std::cout << "=== Initial sleep (5s) ===\n";
+    sleep(5);
 
     EGLContextState egl;
     if (!initEGL(egl)) {
         return -1;
     }
 
-    std::cout << "=== GPU workload start: duration=" << duration_sec
-              << "s, level=" << level << " ===\n";
+// std::cout << "=== GPU workload start: duration=" << duration_sec
+//             << "s, level=" << level << " ===\n";
 
     run_gpu_compute_workload(duration_sec, level);
 
