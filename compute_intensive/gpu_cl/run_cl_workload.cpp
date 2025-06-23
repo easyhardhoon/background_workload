@@ -1,11 +1,13 @@
+#include <cstdio>  // for freopen
 #include "cl_util.h"
 #include <iostream>
 #include <chrono>
 
 void run_cl_workload(CLContextState& cl, int duration_sec, int level) {
-    // Clamp level between 1 and 10
-    level = std::max(1, std::min(level, 10));
-    int loop_count = 1000 * level;
+       	// Clamp level between 1 and 10
+    //level = std::max(1, std::min(level, 10));
+    //int loop_count = 1000 * level;
+    int loop_count = 5 * level;
 
     std::string kernel_src = R"CLC(
     __kernel void compute_heavy(__global float* output, int loop_count) {
@@ -48,7 +50,7 @@ void run_cl_workload(CLContextState& cl, int duration_sec, int level) {
     clSetKernelArg(kernel, 0, sizeof(cl_mem), &output);
     clSetKernelArg(kernel, 1, sizeof(int), &loop_count);
 
-    std::cout << "Running CL workload for " << duration_sec << " sec at level " << level << "...\n";
+    //std::cout << "Running CL workload for " << duration_sec << " sec at level " << level << "...\n";
     auto start = std::chrono::steady_clock::now();
 
     while (true) {
@@ -60,10 +62,9 @@ void run_cl_workload(CLContextState& cl, int duration_sec, int level) {
             break;
     }
 
-    std::cout << "CL workload complete.\n";
+    //std::cout << "CL workload complete.\n";
 
     clReleaseMemObject(output);
     clReleaseKernel(kernel);
     clReleaseProgram(program);
 }
-

@@ -1,9 +1,9 @@
+#include <cstdio>  // for freopen
 #include "cl_util.h"
 #include <iostream>
 
 bool initCL(CLContextState& cl) {
     cl_int err;
-
     err = clGetPlatformIDs(1, &cl.platform, nullptr);
     if (err != CL_SUCCESS) {
         std::cerr << "Failed to get platform ID: " << getCLErrorString(err) << std::endl;
