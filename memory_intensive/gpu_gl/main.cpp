@@ -111,6 +111,7 @@ int main(int argc, char** argv) {
     if (argc != 4) {
         std::cout << "Usage: " << argv[0] << " <tex_size> <num_textures> <delay_ms>\n";
         std::cout << "Example: " << argv[0] << " 4096 6 100\n";
+        std::cout << "Extra info " << "[4096 * 4] ~= 1GB \n";
         return 1;
     }
 
