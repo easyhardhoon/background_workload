@@ -1,1 +1,1 @@
-g++ main.cpp -o gpu_mem_workload -lEGL -lGLESv2 -pthread
+g++ main.cpp -o gpu_cl_mem_workload -lOpenCL
