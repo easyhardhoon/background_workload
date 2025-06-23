@@ -5,12 +5,7 @@
 #include <cstdlib>
 
 #include <CL/cl.h>
-
-#define CHECK_CL(err) \
-    if ((err) != CL_SUCCESS) { \
-        std::cerr << "OpenCL error " << (err) << " at line " << __LINE__ << std::endl; \
-        return 1; \
-    }
+#define CORAL
 
 int main(int argc, char** argv) {
     size_t buffer_size_mb = 64;
@@ -23,7 +18,6 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-
     buffer_size_mb = std::atoi(argv[1]);
     num_buffers = std::atoi(argv[2]);
     hold_sec = std::atoi(argv[3]);
@@ -31,31 +25,55 @@ int main(int argc, char** argv) {
     cl_int err;
 
     cl_platform_id platform;
-    CHECK_CL(clGetPlatformIDs(1, &platform, nullptr));
+    err = clGetPlatformIDs(1, &platform, nullptr);
+    if (err != CL_SUCCESS) {
+        std::cerr << "clGetPlatformIDs failed: " << err << std::endl;
+        return 1;
+    }
 
     cl_device_id device;
-    CHECK_CL(clGetDeviceIDs(platform, CL_DEVICE_TYPE_GPU, 1, &device, nullptr));
+    err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_GPU, 1, &device, nullptr);
+    if (err != CL_SUCCESS) {
+        std::cerr << "clGetDeviceIDs failed: " << err << std::endl;
+        return 1;
+    }
 
     cl_context context = clCreateContext(nullptr, 1, &device, nullptr, nullptr, &err);
-    CHECK_CL(err);
+    if (err != CL_SUCCESS) {
+        std::cerr << "clCreateContext failed: " << err << std::endl;
+        return 1;
+    }
+
+#ifdef CORAL
+    cl_command_queue queue = clCreateCommandQueue(context, device, 0, &err);
+#else
     cl_command_queue queue = clCreateCommandQueueWithProperties(context, device, 0, &err);
-    CHECK_CL(err);
+#endif
+    if (err != CL_SUCCESS) {
+        std::cerr << "clCreateCommandQueue failed: " << err << std::endl;
+        return 1;
+    }
 
     size_t buffer_bytes = buffer_size_mb * 1024 * 1024;
     std::vector<cl_mem> buffers;
-    buffers.reserve(num_buffers);
-
     std::vector<char> pattern(buffer_bytes, static_cast<char>(0xA5));
 
     for (int i = 0; i < num_buffers; ++i) {
         cl_mem buf = clCreateBuffer(context, CL_MEM_READ_WRITE, buffer_bytes, nullptr, &err);
-        CHECK_CL(err);
+        if (err != CL_SUCCESS) {
+            std::cerr << "Buffer " << i + 1 << " creation failed: " << err << std::endl;
+            continue;  
+        }
 
-        CHECK_CL(clEnqueueWriteBuffer(queue, buf, CL_TRUE, 0, buffer_bytes, pattern.data(), 0, nullptr, nullptr));
+        err = clEnqueueWriteBuffer(queue, buf, CL_TRUE, 0, buffer_bytes, pattern.data(), 0, nullptr, nullptr);
+        if (err != CL_SUCCESS) {
+            std::cerr << "Buffer " << i + 1 << " write failed: " << err << std::endl;
+            clReleaseMemObject(buf);
+            continue;
+        }
 
         buffers.push_back(buf);
-        std::cout << "Allocated buffer " << i + 1 << "/" << num_buffers
-                  << " (" << buffer_size_mb << " MB)" << std::endl;
+        std::cout << "Allocated buffer " << i + 1 << "/" << num_buffers << " (" << buffer_size_mb << " MB)" << std::endl;
     }
 
     std::cout << "Holding buffers for " << hold_sec << " seconds..." << std::endl;
