@@ -15,8 +15,8 @@ int main(int argc, char** argv) {
     }
       if (argc >= 2) duration_sec = std::atoi(argv[1]);
     if (argc >= 3) level = std::atoi(argv[2]); 
-// std::cout << "=== Initial sleep (5s) ===\n";
-    sleep(5);
+    //std::cout << "[GPU] === Initial sleep (5s) ===\n";
+   sleep(5);
 
     EGLContextState egl;
     if (!initEGL(egl)) {

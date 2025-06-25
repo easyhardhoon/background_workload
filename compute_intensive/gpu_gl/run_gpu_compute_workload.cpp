@@ -75,7 +75,8 @@ bool initEGL() {
 }
 
 void run_gpu_compute_workload(int duration_sec, int level) {
-    const int loop_count = 100;
+    //const int loop_count = 100;
+    const int loop_count = 1; // ORIN NANO
 
     std::string frag_code = R"(
         precision mediump float;
@@ -134,7 +135,7 @@ void run_gpu_compute_workload(int duration_sec, int level) {
     auto start = std::chrono::steady_clock::now();
 
     while (true) {
-        for (int i = 0; i < level*10; ++i) {
+        for (int i = 0; i < level/2; ++i) {
             glDrawArrays(GL_TRIANGLES, 0, 6);
         }
         glFinish();
