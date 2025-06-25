@@ -2,7 +2,10 @@
 #include <GLES2/gl2.h>
 #include <iostream>
 #include <chrono>
+#include <vector>
 #include <thread>
+#include <random>   
+#include <algorithm>
 
 GLuint compileShader(GLenum type, const char* src) {
     GLuint shader = glCreateShader(type);
@@ -74,9 +77,12 @@ bool initEGL() {
     return true;
 }
 
-void run_gpu_compute_workload(int duration_sec, int level) {
-    //const int loop_count = 100;
-    const int loop_count = 1; // ORIN NANO
+void run_gpu_compute_workload(float base_level) {
+    const int loop_count = 1;
+    const int phase_count = 4;
+    const float phase_duration_sec = 1.5f;
+    const int phase_interval_ms = 1000;
+    const int job_interval_ms = 1;
 
     std::string frag_code = R"(
         precision mediump float;
@@ -109,8 +115,9 @@ void run_gpu_compute_workload(int duration_sec, int level) {
 
     float verts[] = {
         -1.f, -1.f, 1.f, -1.f, -1.f, 1.f,
-        1.f, -1.f, 1.f, 1.f, -1.f, 1.f
+         1.f, -1.f, 1.f,  1.f, -1.f, 1.f
     };
+
     GLuint vbo;
     glGenBuffers(1, &vbo);
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
@@ -132,18 +139,43 @@ void run_gpu_compute_workload(int duration_sec, int level) {
         return;
     }
 
-    auto start = std::chrono::steady_clock::now();
-
-    while (true) {
-        for (int i = 0; i < level/2; ++i) {
-            glDrawArrays(GL_TRIANGLES, 0, 6);
-        }
-        glFinish();
-
-        auto now = std::chrono::steady_clock::now();
-        if (std::chrono::duration_cast<std::chrono::seconds>(now - start).count() >= duration_sec)
-            break;
+    std::vector<int> level_seq;
+    for (int i = 1; i <= phase_count; ++i) {
+        level_seq.push_back(std::max(1, static_cast<int>(base_level * i / phase_count)));
     }
+    std::mt19937 rng(42);
+    std::shuffle(level_seq.begin(), level_seq.end(), rng);
+
+    int total_job_count = 0;
+
+    for (int phase = 0; phase < phase_count; ++phase) {
+        int level = level_seq[phase];
+        auto phase_start = std::chrono::steady_clock::now();
+
+        std::cout << "[GPU Phase " << (phase + 1) << "] Start - Level: " << level << ", Duration: " 
+                  << phase_duration_sec << "s\n";
+
+        while (true) {
+            auto now = std::chrono::steady_clock::now();
+            float elapsed = std::chrono::duration<float>(now - phase_start).count();
+            if (elapsed >= phase_duration_sec) break;
+
+            for (int i = 0; i < level; ++i) {
+                glDrawArrays(GL_TRIANGLES, 0, 6);
+            }
+            glFinish();
+            total_job_count++;
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(job_interval_ms));
+        }
+
+        if (phase < phase_count - 1) {
+            std::cout << "[GPU Phase " << (phase + 1) << "] Sleeping " << phase_interval_ms << "ms between phases\n";
+            std::this_thread::sleep_for(std::chrono::milliseconds(phase_interval_ms));
+        }
+    }
+
+    std::cout << "[GPU] Total job count: " << total_job_count << "\n";
 
     glDeleteFramebuffers(1, &fbo);
     glDeleteTextures(1, &tex);

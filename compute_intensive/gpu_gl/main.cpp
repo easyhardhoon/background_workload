@@ -3,32 +3,34 @@
 #include <cstdlib>      // for atoi
 #include "egl_util.h"
 
-void run_gpu_compute_workload(int duration_sec, int level);
+void run_gpu_compute_workload(float base_level);
 
 int main(int argc, char** argv) {
-    int duration_sec = 10;
-    int level = 10;
-
-    if (argc!=3){
-//     	std::cout << "<usage> : ./gl_workload <duration>\n";
-	return 1;
+    if (argc != 2) {
+        std::cout << "<usage> : ./gl_workload <level>\n";
+        return 1;
     }
-      if (argc >= 2) duration_sec = std::atoi(argv[1]);
-    if (argc >= 3) level = std::atoi(argv[2]); 
-    //std::cout << "[GPU] === Initial sleep (5s) ===\n";
-   sleep(5);
+
+    int level = std::atoi(argv[1]);
+    if (level <= 0) {
+        std::cerr << "Error: level must be a positive integer.\n";
+        return 1;
+    }
+
+    std::cout << "[GPU] === Initial sleep (5s) ===\n";
+    sleep(5);
 
     EGLContextState egl;
     if (!initEGL(egl)) {
+        std::cerr << "[GPU] Failed to initialize EGL context\n";
         return -1;
     }
 
-// std::cout << "=== GPU workload start: duration=" << duration_sec
-//             << "s, level=" << level << " ===\n";
-
-    run_gpu_compute_workload(duration_sec, level);
+    std::cout << "[GPU] === Workload start: level = " << level << " ===\n";
+    run_gpu_compute_workload(static_cast<float>(level));
 
     cleanupEGL(egl);
+    std::cout << "[GPU] === Workload complete ===\n";
     return 0;
 }
 

@@ -21,54 +21,52 @@ void cpu_workload_function(std::atomic<bool>& running_flag, int thread_id, int w
 }
 
 int main(int argc, char** argv) {
-    if (argc != 4) {
-        std::cout << "<usage> : ./cpu_workload <duration_sec(float)> <max_threads> <workload_level>\n";
+    if (argc != 3) {
+        std::cout << "<usage> : ./cpu_workload <workload_level> <max_cores>\n";
         return 1;
     }
 
-    double total_duration = std::atof(argv[1]);
-    int max_threads = std::atoi(argv[2]);
-    int workload_level = std::atoi(argv[3]);
+    int workload_level = std::atoi(argv[1]);
+    int max_cores = std::atoi(argv[2]);
 
     int hardware_threads = std::thread::hardware_concurrency();
-    max_threads = std::max(1, std::min(max_threads, hardware_threads));
+    max_cores = std::max(1, std::min(max_cores, hardware_threads));
     workload_level = std::max(1, std::min(workload_level, 10));
 
-    if (total_duration <= 0 || max_threads <= 0) {
-        std::cerr << "Error: duration and thread count must be positive.\n";
-        return 1;
-    }
+    const int total_phases = 4;
+    const double phase_duration = 1.5;
+    const int phase_interval_ms = 1000;
 
-    double interval_duration = total_duration / max_threads;
-
-    std::vector<int> thread_order(max_threads);
-    for (int i = 0; i < max_threads; ++i) {
-        thread_order[i] = i + 1;
-    }
-
-    std::mt19937 g(0625);
-    std::shuffle(thread_order.begin(), thread_order.end(), g);
+    std::vector<int> phase_order = {0, 1, 2, 3};
+    std::mt19937 rng(625);
+    std::shuffle(phase_order.begin(), phase_order.end(), rng);
 
     std::cout << "[CPU] === Initial sleep (5s) ===\n";
     std::this_thread::sleep_for(std::chrono::seconds(5));
 
-    for (int phase = 0; phase < max_threads; ++phase) {
-        int thread_count = thread_order[phase];
+    for (int p = 0; p < total_phases; ++p) {
+        int phase = phase_order[p];
+        int threads_to_run = (max_cores * (phase + 1)) / total_phases;
         std::atomic<bool> running_flag(true);
         std::vector<std::thread> threads;
 
-        std::cout << "[Phase " << (phase + 1) << "] Running with " << thread_count << " thread(s) for " 
-                  << interval_duration << " seconds...\n";
+        std::cout << "[Phase " << (phase + 1) << " / Order " << (p + 1) << "] Running with " 
+                  << threads_to_run << " thread(s) for " << phase_duration << " seconds...\n";
 
-        for (int i = 0; i < thread_count; ++i) {
+        for (int i = 0; i < threads_to_run; ++i) {
             threads.emplace_back(cpu_workload_function, std::ref(running_flag), i, workload_level);
         }
 
-        std::this_thread::sleep_for(std::chrono::duration<double>(interval_duration));
+        std::this_thread::sleep_for(std::chrono::duration<double>(phase_duration));
         running_flag = false;
 
         for (auto& t : threads) {
             if (t.joinable()) t.join();
+        }
+
+        if (p < total_phases - 1) {
+            std::cout << "[Phase " << (phase + 1) << "] Sleeping for " << phase_interval_ms << " ms between phases...\n";
+            std::this_thread::sleep_for(std::chrono::milliseconds(phase_interval_ms));
         }
     }
 
