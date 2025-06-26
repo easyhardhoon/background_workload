@@ -7,6 +7,8 @@
 #include <random>   
 #include <algorithm>
 
+#define STATIC
+
 GLuint compileShader(GLenum type, const char* src) {
     GLuint shader = glCreateShader(type);
     glShaderSource(shader, 1, &src, nullptr);
@@ -141,7 +143,12 @@ void run_gpu_compute_workload(float base_level) {
 
     std::vector<int> level_seq;
     for (int i = 1; i <= phase_count; ++i) {
-        level_seq.push_back(std::max(1, static_cast<int>(base_level * i / phase_count)));
+	#ifdef STATIC
+	    level_seq.push_back(static_cast<int>(base_level));
+	#endif
+	#ifndef STATIC
+	    level_seq.push_back(std::max(1, static_cast<int>(base_level * i / phase_count)));
+	#endif
     }
     std::mt19937 rng(42);
     std::shuffle(level_seq.begin(), level_seq.end(), rng);
