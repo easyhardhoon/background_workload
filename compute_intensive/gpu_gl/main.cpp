@@ -17,8 +17,8 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    std::cout << "[GPU] === Initial sleep (5s) ===\n";
-    sleep(5);
+    //std::cout << "[GPU] === Initial sleep (5s) ===\n";
+    //sleep(5);
 
     EGLContextState egl;
     if (!initEGL(egl)) {
@@ -26,11 +26,11 @@ int main(int argc, char** argv) {
         return -1;
     }
 
-    std::cout << "[GPU] === Workload start: level = " << level << " ===\n";
+    //std::cout << "[GPU] === Workload start: level = " << level << " ===\n";
     run_gpu_compute_workload(static_cast<float>(level));
 
     cleanupEGL(egl);
-    std::cout << "[GPU] === Workload complete ===\n";
+    //std::cout << "[GPU] === Workload complete ===\n";
     return 0;
 }
 
