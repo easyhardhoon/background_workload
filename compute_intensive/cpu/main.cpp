@@ -8,8 +8,8 @@
 #include <algorithm>
 #include <random>
 
-#define MODERATE
-//#define OVERLOADED
+#define LIGHT
+//#define MODERATE
 
 void cpu_workload_function(std::atomic<bool>& running_flag, int thread_id) {
     volatile double result = 0.0;
@@ -38,26 +38,44 @@ int main(int argc, char** argv) {
     const double phase_duration = 5.0;
 
     std::vector<int> thread_plan;
-
-#ifdef MODERATE
-    thread_plan = {0, 1, 2, 3};
-#elif defined(OVERLOADED)
-    thread_plan = {2, 3, 4, 4};
+    if(max_cores == 6){
+#ifdef LIGHT
+    thread_plan = {2, 1, 2, 1}; // ORIN NANO
+#elif defined(MODERATE)
+    thread_plan = {4, 3, 4, 3}; 
 #else
     thread_plan = {1, 2, 3, 4}; 
-#endif
-
-    std::mt19937 rng(625); 
-    std::shuffle(thread_plan.begin(), thread_plan.end(), rng);
-
+#endif   
+    }
+    if(max_cores == 4){
+ #ifdef LIGHT
+    thread_plan = {2, 1, 2, 1}; // JET NANO, CORAL
+#elif defined(MODERATE)
+    thread_plan = {3, 2, 3, 2}; 
+#else
+    thread_plan = {1, 2, 3, 4}; 
+#endif     
+    }
+    if(max_cores == 8){
+ #ifdef LIGHT
+    thread_plan = {3, 2, 3, 2}; // RUBIK, ODM2
+#elif defined(MODERATE)
+    thread_plan = {6, 4, 6, 4}; 
+#else
+    thread_plan = {1, 2, 3, 4}; 
+#endif     
+    }
+    if(max_cores >8  || max_cores <4) {
+    	std::cerr << "Unsupported core num\n";
+	return 1;
+    }
     for (int p = 0; p < total_phases; ++p) {
-        int thread_ratio = thread_plan[p];
-        int threads_to_run = (max_cores * thread_ratio) / 4;
+	int threads_to_run = thread_plan[p];
         std::atomic<bool> running_flag(true);
         std::vector<std::thread> threads;
 
-        std::cout << "[Phase " << (p + 1) << "] Running with "
-                  << threads_to_run << " thread(s) for " << phase_duration << " seconds...\n";
+        //std::cout << "[Phase " << (p + 1) << "] Running with "
+        //          << threads_to_run << " thread(s) for " << phase_duration << " seconds...\n";
 
         for (int i = 0; i < threads_to_run; ++i) {
             threads.emplace_back(cpu_workload_function, std::ref(running_flag), i);
@@ -71,7 +89,7 @@ int main(int argc, char** argv) {
         }
     }
 
-    std::cout << "[CPU] === All workload phases complete ===\n";
+    //std::cout << "[CPU] === All workload phases complete ===\n";
     return 0;
 }
 

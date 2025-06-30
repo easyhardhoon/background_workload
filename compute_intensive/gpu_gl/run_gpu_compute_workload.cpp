@@ -7,8 +7,8 @@
 #include <random>   
 #include <algorithm>
 
-#define MODERATE
-//#define OVERLOADED
+#define LIGHT
+//#define MODERATE
 
 GLuint compileShader(GLenum type, const char* src) {
     GLuint shader = glCreateShader(type);
@@ -145,14 +145,14 @@ void run_gpu_compute_workload(float base_level) {
 
     std::vector<int> level_seq;
 
-#ifdef MODERATE
+#ifdef LIGHT
     for (int i = 1; i <= phase_count; ++i) {
-        level_seq.push_back(std::max(1, static_cast<int>(base_level * i / phase_count)));
+        level_seq.push_back(std::max(1, static_cast<int>(base_level/2))+(i-2));
     }
 #endif
-#ifdef OVERLOADED
+#ifdef MODERATE
     for (int i = 1; i <= phase_count; ++i) {
-        level_seq.push_back(static_cast<int>(base_level * i));
+        level_seq.push_back(static_cast<int>(base_level*10)+(i-2)*10);
     }
 #endif
 
@@ -165,8 +165,8 @@ void run_gpu_compute_workload(float base_level) {
         int level = level_seq[phase];
         auto phase_start = std::chrono::steady_clock::now();
 
-        std::cout << "[GPU Phase " << (phase + 1) << "] Start - Level: " << level
-                  << ", Duration: " << phase_duration_sec << "s\n";
+//        std::cout << "[GPU Phase " << (phase + 1) << "] Start - Level: " << level
+  //                << ", Duration: " << phase_duration_sec << "s\n";
 
         auto job_start = std::chrono::steady_clock::now();
         while (true) {
@@ -184,7 +184,7 @@ void run_gpu_compute_workload(float base_level) {
         }
 
         if (phase < phase_count - 1) {
-            std::cout << "[GPU Phase " << (phase + 1) << "] Sleeping " << phase_interval_ms << "ms between phases\n";
+//            std::cout << "[GPU Phase " << (phase + 1) << "] Sleeping " << phase_interval_ms << "ms between phases\n";
             std::this_thread::sleep_for(std::chrono::milliseconds(phase_interval_ms));
         }
     }
@@ -196,4 +196,3 @@ void run_gpu_compute_workload(float base_level) {
     glDeleteShader(vs);
     glDeleteShader(fs);
 }
-
