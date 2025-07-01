@@ -7,8 +7,8 @@
 #include <random>   
 #include <algorithm>
 
-#define LIGHT
-//#define MODERATE
+#define MODERATE
+//#define OVERLOADED
 
 GLuint compileShader(GLenum type, const char* src) {
     GLuint shader = glCreateShader(type);
@@ -80,12 +80,9 @@ bool initEGL() {
     return true;
 }
 
-void run_gpu_compute_workload(float base_level) {
+
+void run_gpu_compute_workload(float base_level, float duration_sec) {
     const int loop_count = 1;
-    const int phase_count = 4;
-    const float phase_duration_sec = 5.0f;
-    const float job_time_sec = 4.0f;
-    const int phase_interval_ms = 1000;
     const int job_interval_ms = 1;
 
     std::string frag_code = R"(
@@ -143,51 +140,36 @@ void run_gpu_compute_workload(float base_level) {
         return;
     }
 
-    std::vector<int> level_seq;
+    int level = static_cast<int>(base_level);
 
-#ifdef LIGHT
-    for (int i = 1; i <= phase_count; ++i) {
-        level_seq.push_back(std::max(1, static_cast<int>(base_level/2))+(i-2));
-    }
-#endif
 #ifdef MODERATE
-    for (int i = 1; i <= phase_count; ++i) {
-        level_seq.push_back(static_cast<int>(base_level*10)+(i-2)*10);
-    }
+    level = base_level / 2;
+#endif
+#ifdef OVERLOADED
+    level = base_level * 10;
 #endif
 
-    std::mt19937 rng(42);
-    std::shuffle(level_seq.begin(), level_seq.end(), rng);
+    std::cout << "[GPU] Single job start - Level: " << level
+              << ", Duration: " << duration_sec << "s\n";
 
     int total_job_count = 0;
+    auto workload_start = std::chrono::steady_clock::now();
 
-    for (int phase = 0; phase < phase_count; ++phase) {
-        int level = level_seq[phase];
-        auto phase_start = std::chrono::steady_clock::now();
+    while (true) {
+        auto now = std::chrono::steady_clock::now();
+        float elapsed = std::chrono::duration<float>(now - workload_start).count();
+        if (elapsed >= duration_sec) break;
 
-//        std::cout << "[GPU Phase " << (phase + 1) << "] Start - Level: " << level
-  //                << ", Duration: " << phase_duration_sec << "s\n";
-
-        auto job_start = std::chrono::steady_clock::now();
-        while (true) {
-            auto now = std::chrono::steady_clock::now();
-            float elapsed = std::chrono::duration<float>(now - job_start).count();
-            if (elapsed >= job_time_sec) break;
-
-            for (int i = 0; i < level; ++i) {
-                glDrawArrays(GL_TRIANGLES, 0, 6);
-            }
-            glFinish();
-            total_job_count++;
-
-            std::this_thread::sleep_for(std::chrono::milliseconds(job_interval_ms));
+        for (int i = 0; i < level; ++i) {
+            glDrawArrays(GL_TRIANGLES, 0, 6);
         }
+        glFinish();
+        total_job_count++;
 
-        if (phase < phase_count - 1) {
-//            std::cout << "[GPU Phase " << (phase + 1) << "] Sleeping " << phase_interval_ms << "ms between phases\n";
-            std::this_thread::sleep_for(std::chrono::milliseconds(phase_interval_ms));
-        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(job_interval_ms));
     }
+
+    //std::cout << "[GPU] Job complete. Total iterations: " << total_job_count << "\n";
 
     glDeleteFramebuffers(1, &fbo);
     glDeleteTextures(1, &tex);
@@ -196,3 +178,4 @@ void run_gpu_compute_workload(float base_level) {
     glDeleteShader(vs);
     glDeleteShader(fs);
 }
+
